@@ -5,82 +5,68 @@ let blockchain = [];
 // Load users and blockchain from local storage on page load
 window.addEventListener('load', () => {
   const storedUsers = localStorage.getItem('users');
-  if (storedUsers) {
-    users = JSON.parse(storedUsers);
-  }
-
+  if (storedUsers) users = JSON.parse(storedUsers);
   const storedBlockchain = localStorage.getItem('blockchain');
-  if (storedBlockchain) {
-    blockchain = JSON.parse(storedBlockchain);
-  }
-
-  // Create genesis block if blockchain is empty
-  if (blockchain.length === 0) {
-    createGenesisBlock();
-  }
+  if (storedBlockchain) blockchain = JSON.parse(storedBlockchain);
+  if (blockchain.length === 0) createGenesisBlock();
 });
 
-// Save users to local storage
+// Save functions
 function saveUsers() {
   localStorage.setItem('users', JSON.stringify(users));
 }
-
-// Save blockchain to local storage
 function saveBlockchain() {
   localStorage.setItem('blockchain', JSON.stringify(blockchain));
 }
 
-// Toggle between register and login views
-document.getElementById('showRegister').addEventListener('click', (e) => {
+// Toggle views
+document.getElementById('showRegister').addEventListener('click', e => {
   e.preventDefault();
   document.getElementById('loginBox').style.display = 'none';
   document.getElementById('registerBox').style.display = 'block';
 });
-document.getElementById('showLogin').addEventListener('click', (e) => {
+document.getElementById('showLogin').addEventListener('click', e => {
   e.preventDefault();
   document.getElementById('registerBox').style.display = 'none';
   document.getElementById('loginBox').style.display = 'block';
 });
 
-// Handle login
+// Register
+document.getElementById('registerBtn').addEventListener('click', () => {
+  const username = document.getElementById('registerUsername').value.trim();
+  const password = document.getElementById('registerPassword').value.trim();
+  const messageDiv = document.getElementById('registerMessage');
+  if (username === '' || password === '') {
+    messageDiv.textContent = 'Fill all fields.';
+    messageDiv.style.color = 'red';
+    return;
+  }
+  if (users[username]) {
+    messageDiv.textContent = 'Username exists.';
+    messageDiv.style.color = 'red';
+  } else {
+    users[username] = password;
+    saveUsers();
+    messageDiv.textContent = 'Registered! You can login.';
+    messageDiv.style.color = 'green';
+    setTimeout(() => {
+      document.getElementById('showLogin').click();
+    }, 1500);
+  }
+});
+
+// Login
 document.getElementById('loginBtn').addEventListener('click', () => {
   const username = document.getElementById('loginUsername').value.trim();
   const password = document.getElementById('loginPassword').value.trim();
   const messageDiv = document.getElementById('loginMessage');
-
   if (users[username] && users[username] === password) {
     messageDiv.style.color = 'green';
     messageDiv.textContent = 'Login successful!';
     startImageFunctions(username);
   } else {
     messageDiv.style.color = 'red';
-    messageDiv.textContent = 'Invalid username or password.';
-  }
-});
-
-// Handle registration
-document.getElementById('registerBtn').addEventListener('click', () => {
-  const username = document.getElementById('registerUsername').value.trim();
-  const password = document.getElementById('registerPassword').value.trim();
-  const messageDiv = document.getElementById('registerMessage');
-
-  if (username === '' || password === '') {
-    messageDiv.style.color = 'red';
-    messageDiv.textContent = 'Please fill in all fields.';
-    return;
-  }
-
-  if (users[username]) {
-    messageDiv.style.color = 'red';
-    messageDiv.textContent = 'Username already exists.';
-  } else {
-    users[username] = password;
-    saveUsers();
-    messageDiv.style.color = 'green';
-    messageDiv.textContent = 'Registration successful! You can now login.';
-    setTimeout(() => {
-      document.getElementById('showLogin').click();
-    }, 1500);
+    messageDiv.textContent = 'Invalid credentials.';
   }
 });
 
@@ -95,27 +81,23 @@ function createImageSection(username) {
   const container = document.createElement('div');
   container.id = 'imageSection';
   container.innerHTML = `
-    <h3>Image Upload & Retrieval</h3>
+    <h3>Upload & Retrieve Images</h3>
     <input type="file" id="imageUpload" accept="image/*" />
     <button id="uploadBtn">Upload Image</button>
     <br/><br/>
-    <input type="text" id="retrieveCode" placeholder="Enter code to retrieve image" />
+    <input type="text" id="retrieveCode" placeholder="Enter code to retrieve" />
     <button id="retrieveBtn">Retrieve Image</button>
     <div id="retrievedImage" style="margin-top:10px;"></div>
-    <h4>Retrieval History</h4>
+    <h4>History</h4>
     <ul id="historyList"></ul>
   `;
   document.getElementById('mainContent').appendChild(container);
 
-  document.getElementById('uploadBtn').addEventListener('click', () => {
-    uploadImage(username);
-  });
-  document.getElementById('retrieveBtn').addEventListener('click', () => {
-    retrieveImage();
-  });
+  document.getElementById('uploadBtn').addEventListener('click', () => uploadImage(username));
+  document.getElementById('retrieveBtn').addEventListener('click', retrieveImage);
 }
 
-// Create the genesis block if blockchain is empty
+// Create genesis block if blockchain is empty
 async function createGenesisBlock() {
   const genesisBlock = {
     index: 0,
@@ -129,22 +111,20 @@ async function createGenesisBlock() {
   saveBlockchain();
 }
 
-// Calculate SHA-256 hash
+// Hash function
 async function calculateHash(data) {
   const encoder = new TextEncoder();
   const dataBuffer = encoder.encode(data);
   const hashBuffer = await crypto.subtle.digest('SHA-256', dataBuffer);
   const hashArray = Array.from(new Uint8Array(hashBuffer));
-  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-  return hashHex;
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
-// Generate new block containing image data
+// Add new block
 async function generateBlock(imageData, username) {
   const previousBlock = blockchain[blockchain.length - 1];
-  const newIndex = previousBlock.index + 1;
   const newBlock = {
-    index: newIndex,
+    index: previousBlock.index + 1,
     timestamp: new Date().toISOString(),
     imageData: imageData,
     previousHash: previousBlock.hash,
@@ -156,43 +136,41 @@ async function generateBlock(imageData, username) {
   return newBlock;
 }
 
-// Upload image and store in blockchain
+// Upload image
 async function uploadImage(username) {
   const fileInput = document.getElementById('imageUpload');
   const file = fileInput.files[0];
   if (!file) {
-    alert('Please select an image to upload.');
+    alert('Select an image.');
     return;
   }
-
   const reader = new FileReader();
   reader.onload = async () => {
     const imageData = reader.result;
     const newBlock = await generateBlock(imageData, username);
-    alert(`Image stored in blockchain with code: ${newBlock.index}`);
-    fileInput.value = '';
+    alert(`Stored with code: ${newBlock.index}`);
+    document.getElementById('imageUpload').value = '';
   };
   reader.readAsDataURL(file);
 }
 
-// Retrieve image by code (block index)
+// Retrieve image
 function retrieveImage() {
   const code = document.getElementById('retrieveCode').value.trim();
-  const imageContainer = document.getElementById('retrievedImage');
-
+  const imageDiv = document.getElementById('retrievedImage');
   const block = blockchain.find(b => b.index.toString() === code);
   if (block && block.imageData) {
-    imageContainer.innerHTML = `<img src="${block.imageData}" alt="Retrieved Image" width="300" />`;
+    imageDiv.innerHTML = `<img src="${block.imageData}" width="300" />`;
     addToHistory(block);
   } else {
-    imageContainer.innerHTML = 'No image found for this code.';
+    imageDiv.innerHTML = 'No image found.';
   }
 }
 
-// Add retrieved block info to history
+// Add to history
 function addToHistory(block) {
-  const historyList = document.getElementById('historyList');
+  const list = document.getElementById('historyList');
   const li = document.createElement('li');
   li.textContent = `Code: ${block.index} | Time: ${block.timestamp}`;
-  historyList.appendChild(li);
+  list.appendChild(li);
 }
