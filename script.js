@@ -13,6 +13,11 @@ window.addEventListener('load', () => {
   if (storedBlockchain) {
     blockchain = JSON.parse(storedBlockchain);
   }
+
+  // Create genesis block if blockchain is empty
+  if (blockchain.length === 0) {
+    createGenesisBlock();
+  }
 });
 
 // Save users to local storage
@@ -110,13 +115,49 @@ function createImageSection(username) {
   });
 }
 
-// Generate unique code
-function generateUniqueCode() {
-  return 'IMG' + Date.now() + Math.floor(Math.random() * 1000);
+// Create the genesis block if blockchain is empty
+async function createGenesisBlock() {
+  const genesisBlock = {
+    index: 0,
+    timestamp: new Date().toISOString(),
+    imageData: '',
+    previousHash: '0',
+    hash: ''
+  };
+  genesisBlock.hash = await calculateHash(JSON.stringify(genesisBlock));
+  blockchain.push(genesisBlock);
+  saveBlockchain();
 }
 
-// Upload image and add to blockchain
-function uploadImage(username) {
+// Calculate SHA-256 hash
+async function calculateHash(data) {
+  const encoder = new TextEncoder();
+  const dataBuffer = encoder.encode(data);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', dataBuffer);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  return hashHex;
+}
+
+// Generate new block containing image data
+async function generateBlock(imageData, username) {
+  const previousBlock = blockchain[blockchain.length - 1];
+  const newIndex = previousBlock.index + 1;
+  const newBlock = {
+    index: newIndex,
+    timestamp: new Date().toISOString(),
+    imageData: imageData,
+    previousHash: previousBlock.hash,
+    hash: ''
+  };
+  newBlock.hash = await calculateHash(JSON.stringify(newBlock));
+  blockchain.push(newBlock);
+  saveBlockchain();
+  return newBlock;
+}
+
+// Upload image and store in blockchain
+async function uploadImage(username) {
   const fileInput = document.getElementById('imageUpload');
   const file = fileInput.files[0];
   if (!file) {
@@ -125,31 +166,22 @@ function uploadImage(username) {
   }
 
   const reader = new FileReader();
-  reader.onload = () => {
+  reader.onload = async () => {
     const imageData = reader.result;
-    const code = generateUniqueCode();
-
-    const block = {
-      code: code,
-      username: username,
-      imageData: imageData,
-      timestamp: new Date().toISOString()
-    };
-    blockchain.push(block);
-    saveBlockchain();
-    alert(`Image uploaded with code: ${code}`);
+    const newBlock = await generateBlock(imageData, username);
+    alert(`Image stored in blockchain with code: ${newBlock.index}`);
     fileInput.value = '';
   };
   reader.readAsDataURL(file);
 }
 
-// Retrieve image by code
+// Retrieve image by code (block index)
 function retrieveImage() {
   const code = document.getElementById('retrieveCode').value.trim();
   const imageContainer = document.getElementById('retrievedImage');
 
-  const block = blockchain.find(b => b.code === code);
-  if (block) {
+  const block = blockchain.find(b => b.index.toString() === code);
+  if (block && block.imageData) {
     imageContainer.innerHTML = `<img src="${block.imageData}" alt="Retrieved Image" width="300" />`;
     addToHistory(block);
   } else {
@@ -157,10 +189,10 @@ function retrieveImage() {
   }
 }
 
-// Add retrieved info to history (for all users)
+// Add retrieved block info to history
 function addToHistory(block) {
   const historyList = document.getElementById('historyList');
   const li = document.createElement('li');
-  li.textContent = `Code: ${block.code} | User: ${block.username} | Time: ${block.timestamp}`;
+  li.textContent = `Code: ${block.index} | Time: ${block.timestamp}`;
   historyList.appendChild(li);
 }
