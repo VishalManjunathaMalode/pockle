@@ -1,15 +1,33 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Proof of Concept</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Login & Register Page</title>
+<link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-    <h1>Sample HTML + JS Proof of Concept</h1>
-    <button id="loadData">Load Data</button>
-    <pre id="jsonData"></pre>
 
-    <script src="script.js"></script>
+<div class="container">
+  <div class="form-box" id="loginBox">
+    <h2>Login</h2>
+    <input type="text" id="loginUsername" placeholder="Username" />
+    <input type="password" id="loginPassword" placeholder="Password" />
+    <button id="loginBtn">Login</button>
+    <p>Don't have an account? <a href="#" id="showRegister">Register here</a></p>
+    <div id="loginMessage"></div>
+  </div>
+
+  <div class="form-box" id="registerBox" style="display:none;">
+    <h2>Register</h2>
+    <input type="text" id="registerUsername" placeholder="Username" />
+    <input type="password" id="registerPassword" placeholder="Password" />
+    <button id="registerBtn">Register</button>
+    <p>Already have an account? <a href="#" id="showLogin">Login here</a></p>
+    <div id="registerMessage"></div>
+  </div>
+</div>
+
+<script src="script.js"></script>
 </body>
 </html>
