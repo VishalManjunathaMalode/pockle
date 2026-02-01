@@ -12,9 +12,9 @@ input {
 button {
   margin-bottom: 10px;
 }
-#historyList {
-  max-height: 200px;
+#historyContainer {
+  max-height: 300px;
   overflow-y: auto;
   border: 1px solid #ccc;
-  padding: 5px;
+  padding: 10px;
 }

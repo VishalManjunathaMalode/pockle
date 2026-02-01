@@ -1,9 +1,10 @@
-// User data storage
+// Data storage
 let users = {};
 let blockchain = [];
 let currentUser = '';
+let actionHistory = []; // To store all actions
 
-// Load users and blockchain from local storage on page load
+// Load data
 window.addEventListener('load', () => {
   const storedUsers = localStorage.getItem('users');
   if (storedUsers) users = JSON.parse(storedUsers);
@@ -13,12 +14,8 @@ window.addEventListener('load', () => {
 });
 
 // Save functions
-function saveUsers() {
-  localStorage.setItem('users', JSON.stringify(users));
-}
-function saveBlockchain() {
-  localStorage.setItem('blockchain', JSON.stringify(blockchain));
-}
+function saveUsers() { localStorage.setItem('users', JSON.stringify(users)); }
+function saveBlockchain() { localStorage.setItem('blockchain', JSON.stringify(blockchain)); }
 
 // Toggle views
 document.getElementById('showRegister').addEventListener('click', e => {
@@ -71,35 +68,15 @@ document.getElementById('loginBtn').addEventListener('click', () => {
   }
 });
 
-// Start image functions after login
+// Start image functions
 function startImageFunctions(username) {
-  currentUser = username; // set globally
+  currentUser = username;
   document.getElementById('mainContent').innerHTML = '';
   createImageSection(username);
+  createHistorySection();
 }
 
-// Create upload and retrieve UI
-function createImageSection(username) {
-  const container = document.createElement('div');
-  container.id = 'imageSection';
-  container.innerHTML = `
-    <h3>Upload & Retrieve Images</h3>
-    <input type="file" id="imageUpload" accept="image/*" />
-    <button id="uploadBtn">Upload Image</button>
-    <br/><br/>
-    <input type="text" id="retrieveCode" placeholder="Enter code to retrieve" />
-    <button id="retrieveBtn">Retrieve Image</button>
-    <div id="retrievedImage" style="margin-top:10px;"></div>
-    <h4>History</h4>
-    <ul id="historyList"></ul>
-  `;
-  document.getElementById('mainContent').appendChild(container);
-
-  document.getElementById('uploadBtn').addEventListener('click', () => uploadImage(username));
-  document.getElementById('retrieveBtn').addEventListener('click', retrieveImage);
-}
-
-// Create genesis block if blockchain is empty
+// Genesis block
 async function createGenesisBlock() {
   const genesisBlock = {
     index: 0,
@@ -107,7 +84,7 @@ async function createGenesisBlock() {
     imageData: '',
     previousHash: '0',
     hash: '',
-    storedBy: 'System', // Genesis
+    storedBy: 'System',
     retrievedBy: []
   };
   genesisBlock.hash = await calculateHash(JSON.stringify(genesisBlock));
@@ -139,7 +116,64 @@ async function generateBlock(imageData, username) {
   newBlock.hash = await calculateHash(JSON.stringify(newBlock));
   blockchain.push(newBlock);
   saveBlockchain();
+  // Log action
+  logAction('Upload', newBlock.index, username);
   return newBlock;
+}
+
+// Create upload & retrieve UI
+function createImageSection(username) {
+  const container = document.createElement('div');
+  container.id = 'imageSection';
+  container.innerHTML = `
+    <h3>Upload & Retrieve Images</h3>
+    <input type="file" id="imageUpload" accept="image/*" />
+    <button id="uploadBtn">Upload Image</button>
+    <br/><br/>
+    <input type="text" id="retrieveCode" placeholder="Enter code to retrieve" />
+    <button id="retrieveBtn">Retrieve Image</button>
+    <div id="retrievedImage" style="margin-top:10px;"></div>
+    <h4>History Log</h4>
+    <div id="historyContainer"></div>
+  `;
+  document.getElementById('mainContent').appendChild(container);
+  document.getElementById('uploadBtn').addEventListener('click', () => uploadImage(username));
+  document.getElementById('retrieveBtn').addEventListener('click', retrieveImage);
+}
+
+// Create history display
+function createHistorySection() {
+  const container = document.createElement('div');
+  container.id = 'fullHistory';
+  container.innerHTML = `<h3>Full Action History</h3><div id="fullHistoryLog"></div>`;
+  document.getElementById('mainContent').appendChild(container);
+  updateFullHistory();
+}
+
+// Log an action (upload/retrieve)
+function logAction(type, code, username) {
+  const action = {
+    type: type,
+    code: code,
+    user: username,
+    timestamp: new Date().toISOString()
+  };
+  actionHistory.push(action);
+  updateFullHistory();
+}
+
+// Update full history display
+function updateFullHistory() {
+  const container = document.getElementById('fullHistoryLog');
+  if (!container) return;
+  container.innerHTML = '';
+  actionHistory.forEach(act => {
+    const div = document.createElement('div');
+    div.innerHTML = `
+      <b>${act.type}</b> - Code: ${act.code} | User: ${act.user} | Time: ${act.timestamp}
+    `;
+    container.appendChild(div);
+  });
 }
 
 // Upload image
@@ -166,24 +200,28 @@ function retrieveImage() {
   const imageDiv = document.getElementById('retrievedImage');
   const block = blockchain.find(b => b.index.toString() === code);
   if (block && block.imageData) {
-    // Log who retrieved
+    // Log retrieval
     if (!block.retrievedBy.includes(currentUser)) {
       block.retrievedBy.push(currentUser);
       saveBlockchain();
     }
+    // Log action
+    logAction('Retrieve', block.index, currentUser);
+    // Show image
     imageDiv.innerHTML = `<img src="${block.imageData}" width="300" />`;
+    // Add to history log
     addToHistory(block);
   } else {
     imageDiv.innerHTML = 'No image found.';
   }
 }
 
-// Add to history with details
+// Add individual block info to history log
 function addToHistory(block) {
-  const list = document.getElementById('historyList');
-  const li = document.createElement('li');
-  li.innerHTML = `
-    Code: ${block.index} | Time: ${block.timestamp} | Stored by: ${block.storedBy} | Retrieved by: ${block.retrievedBy.join(', ') || 'None'}
+  const listDiv = document.getElementById('historyContainer');
+  const div = document.createElement('div');
+  div.innerHTML = `
+    <b>Code:</b> ${block.index} | <b>Time:</b> ${block.timestamp} | <b>Stored by:</b> ${block.storedBy} | <b>Retrieved by:</b> ${block.retrievedBy.join(', ') || 'None'}
   `;
-  list.appendChild(li);
+  listDiv.appendChild(div);
 }
