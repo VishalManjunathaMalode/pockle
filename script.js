@@ -162,7 +162,7 @@ function logAction(type, code, user) {
   updateFullHistory();
 }
 
-// Update full history display
+// Update full history
 function updateFullHistory() {
   const container = document.getElementById('fullHistoryLog');
   if (!container) return;
@@ -217,28 +217,34 @@ function retrieveImage() {
   }
 }
 
-// Show detailed history for a specific image
+// Show detailed retrieval & upload history
 function showImageHistory(block) {
   const container = document.getElementById('imageHistory');
   container.innerHTML = '';
-  // Upload info
-  const uploadDiv = document.createElement('div');
-  uploadDiv.innerHTML = `
+
+  // Show uploader info
+  const uploaderDiv = document.createElement('div');
+  uploaderDiv.innerHTML = `
     <b>Uploaded by:</b> ${block.storedBy} <br/>
     <b>Upload time:</b> ${block.timestamp}
   `;
-  container.appendChild(uploadDiv);
-  // Retrieval info
-  if (block.retrievedBy.length > 0) {
-    const retrievedDiv = document.createElement('div');
-    retrievedDiv.innerHTML = '<b>Retrieved by:</b><br/>';
-    block.retrievedBy.forEach(user => {
-      retrievedDiv.innerHTML += `- ${user}<br/>`;
+  container.appendChild(uploaderDiv);
+
+  // Show previous viewers (retrievedBy) before current
+  const prevViewers = [...new Set(block.retrievedBy)];
+  const viewersDiv = document.createElement('div');
+  viewersDiv.innerHTML = '<b>Previously viewed by:</b><br/>';
+  if (prevViewers.length > 0) {
+    prevViewers.forEach(user => {
+      viewersDiv.innerHTML += `- ${user}<br/>`;
     });
-    container.appendChild(retrievedDiv);
   } else {
-    const noRetrieveDiv = document.createElement('div');
-    noRetrieveDiv.innerHTML = '<b>No retrievals yet.</b>';
-    container.appendChild(noRetrieveDiv);
+    viewersDiv.innerHTML += 'None<br/>';
   }
+  container.appendChild(viewersDiv);
+
+  // Show current viewer
+  const currentViewerDiv = document.createElement('div');
+  currentViewerDiv.innerHTML = `<b>Current viewer:</b> ${currentUser}`;
+  container.appendChild(currentViewerDiv);
 }
