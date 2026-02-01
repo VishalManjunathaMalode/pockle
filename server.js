@@ -72,16 +72,30 @@ app.post('/register', (req, res) => {
 // Login endpoint
 app.post('/login', (req, res) => {
     const { username, password } = req.body;
+
+    // Validate request body
+    if (!username || !password) {
+        return res.status(400).json({ error: 'Username and password are required' });
+    }
+
     const users = loadUsers();
+
+    // Check if user exists
     if (!users[username]) {
-        return res.status(400).send('User not found');
+        return res.status(404).json({ error: 'User not found' });
     }
+
+    // Hash provided password and compare
     const hash = crypto.createHash('sha256').update(password).digest('hex');
+
     if (users[username].password !== hash) {
-        return res.status(403).send('Invalid password');
+        return res.status(401).json({ error: 'Invalid password' });
     }
+
+    // Set current user (consider session management in production)
     currentUser = username;
-    res.send(`Logged in as ${username}`);
+
+    res.json({ message: `Logged in as ${username}` });
 });
 
 // Logout endpoint
