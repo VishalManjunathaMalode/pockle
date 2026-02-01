@@ -1,9 +1,17 @@
 // User data storage
-let users = {}; // username: password
+let users = {};
+// Load stored credentials on page load
+window.addEventListener('load', () => {
+  const storedUsers = localStorage.getItem('users');
+  if (storedUsers) {
+    users = JSON.parse(storedUsers);
+  }
+});
 
-// Blockchain-like ledger
-let blockchain = []; // Array of blocks (transactions)
-let retrievedHistory = {}; // user: [{code, imageData, timestamp}]
+// Save users to local storage
+function saveUsers() {
+  localStorage.setItem('users', JSON.stringify(users));
+}
 
 // Show register/login toggles
 document.getElementById('showRegister').addEventListener('click', (e) => {
@@ -50,6 +58,7 @@ document.getElementById('registerBtn').addEventListener('click', () => {
     messageDiv.textContent = 'Username already exists.';
   } else {
     users[username] = password;
+    saveUsers(); // Save to local storage
     messageDiv.style.color = 'green';
     messageDiv.textContent = 'Registration successful! You can now login.';
     setTimeout(() => {
@@ -60,11 +69,8 @@ document.getElementById('registerBtn').addEventListener('click', () => {
 
 // Start image functions after login
 function startImageFunctions(username) {
-  // Show the main image upload/retrieve section
-  // (Create or reveal a section in your HTML, for demo we'll assume it's there)
-  if (!document.getElementById('imageSection')) {
-    createImageSection(username);
-  }
+  document.getElementById('mainContent').innerHTML = '';
+  createImageSection(username);
 }
 
 // Create image upload/retrieve UI
@@ -75,14 +81,14 @@ function createImageSection(username) {
     <h3>Image Upload & Retrieval</h3>
     <input type="file" id="imageUpload" accept="image/*" />
     <button id="uploadBtn">Upload Image</button>
-    <br><br>
+    <br/><br/>
     <input type="text" id="retrieveCode" placeholder="Enter code to retrieve image" />
     <button id="retrieveBtn">Retrieve Image</button>
-    <div id="retrievedImage"></div>
+    <div id="retrievedImage" style="margin-top:10px;"></div>
     <h4>Retrieval History</h4>
     <ul id="historyList"></ul>
   `;
-  document.body.appendChild(container);
+  document.getElementById('mainContent').appendChild(container);
 
   document.getElementById('uploadBtn').addEventListener('click', () => {
     uploadImage(username);
@@ -91,6 +97,9 @@ function createImageSection(username) {
     retrieveImage();
   });
 }
+
+// Blockchain-like ledger
+let blockchain = [];
 
 // Function to upload image with a unique code
 function uploadImage(username) {
@@ -121,7 +130,7 @@ function uploadImage(username) {
   reader.readAsDataURL(file);
 }
 
-// Generate a simple unique code (for demo purposes)
+// Generate a simple unique code
 function generateUniqueCode() {
   return 'IMG' + Date.now() + Math.floor(Math.random() * 1000);
 }
