@@ -179,7 +179,7 @@ function retrieveImage() {
     logAction('Retrieve', block.index, currentUser);
     // Show image
     imageDiv.innerHTML = `<img src="${block.imageData}" width="300" />`;
-    // Show detailed history for this image
+    // Show detailed retrieval history
     showImageHistory(block);
   } else {
     imageDiv.innerHTML = 'No image found.';
@@ -200,17 +200,19 @@ function showImageHistory(block) {
   `;
   container.appendChild(uploaderDiv);
 
-  // Show previous viewers with timestamps
-  const viewersDiv = document.createElement('div');
-  viewersDiv.innerHTML = '<b>Previously viewed by:</b><br/>';
+  // Show all retrievals with timestamps
   if (block.retrievedBy.length > 0) {
+    const historyDiv = document.createElement('div');
+    historyDiv.innerHTML = '<b>Retrieval history:</b><br/>';
     block.retrievedBy.forEach(entry => {
-      viewersDiv.innerHTML += `- ${entry.user} at ${new Date(entry.timestamp).toLocaleString()}<br/>`;
+      historyDiv.innerHTML += `- ${entry.user} at ${new Date(entry.timestamp).toLocaleString()}<br/>`;
     });
+    container.appendChild(historyDiv);
   } else {
-    viewersDiv.innerHTML += 'None<br/>';
+    const noRetrievals = document.createElement('div');
+    noRetrievals.innerHTML = 'No views yet.';
+    container.appendChild(noRetrievals);
   }
-  container.appendChild(viewersDiv);
 
   // Show current viewer
   const currentViewerDiv = document.createElement('div');
