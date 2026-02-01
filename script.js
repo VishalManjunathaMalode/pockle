@@ -2,7 +2,6 @@
 let users = {};
 let blockchain = [];
 let currentUser = '';
-let actionHistory = []; // To store all actions
 
 // Load data
 window.addEventListener('load', () => {
@@ -73,7 +72,7 @@ function startImageFunctions(username) {
   currentUser = username;
   document.getElementById('mainContent').innerHTML = '';
   createImageSection(username);
-  createHistorySection();
+  // No full history section
 }
 
 // Genesis block
@@ -141,39 +140,10 @@ function createImageSection(username) {
   document.getElementById('retrieveBtn').addEventListener('click', () => retrieveImage());
 }
 
-// Create full history display
-function createHistorySection() {
-  const container = document.createElement('div');
-  container.id = 'fullHistory';
-  container.innerHTML = `<h3>Full Action History</h3><div id="fullHistoryLog"></div>`;
-  document.getElementById('mainContent').appendChild(container);
-  updateFullHistory();
-}
-
 // Log an action
 function logAction(type, code, user) {
-  const action = {
-    type: type,
-    code: code,
-    user: user,
-    timestamp: new Date().toISOString()
-  };
-  actionHistory.push(action);
-  updateFullHistory();
-}
-
-// Update full history
-function updateFullHistory() {
-  const container = document.getElementById('fullHistoryLog');
-  if (!container) return;
-  container.innerHTML = '';
-  actionHistory.forEach(act => {
-    const div = document.createElement('div');
-    div.innerHTML = `
-      <b>${act.type}</b> - Code: ${act.code} | User: ${act.user} | Time: ${act.timestamp}
-    `;
-    container.appendChild(div);
-  });
+  // Action logging for full history is removed
+  // If needed, can be re-implemented
 }
 
 // Upload image
@@ -200,9 +170,9 @@ function retrieveImage() {
   const imageDiv = document.getElementById('retrievedImage');
   const block = blockchain.find(b => b.index.toString() === code);
   if (block && block.imageData) {
-    // Log retrieval
-    if (!block.retrievedBy.includes(currentUser)) {
-      block.retrievedBy.push(currentUser);
+    // Log retrieval with timestamp
+    if (!block.retrievedBy.some(entry => entry.user === currentUser)) {
+      block.retrievedBy.push({ user: currentUser, timestamp: new Date().toISOString() });
       saveBlockchain();
     }
     // Log action
@@ -226,17 +196,16 @@ function showImageHistory(block) {
   const uploaderDiv = document.createElement('div');
   uploaderDiv.innerHTML = `
     <b>Uploaded by:</b> ${block.storedBy} <br/>
-    <b>Upload time:</b> ${block.timestamp}
+    <b>Upload time:</b> ${new Date(block.timestamp).toLocaleString()}
   `;
   container.appendChild(uploaderDiv);
 
-  // Show previous viewers (retrievedBy) before current
-  const prevViewers = [...new Set(block.retrievedBy)];
+  // Show previous viewers with timestamps
   const viewersDiv = document.createElement('div');
   viewersDiv.innerHTML = '<b>Previously viewed by:</b><br/>';
-  if (prevViewers.length > 0) {
-    prevViewers.forEach(user => {
-      viewersDiv.innerHTML += `- ${user}<br/>`;
+  if (block.retrievedBy.length > 0) {
+    block.retrievedBy.forEach(entry => {
+      viewersDiv.innerHTML += `- ${entry.user} at ${new Date(entry.timestamp).toLocaleString()}<br/>`;
     });
   } else {
     viewersDiv.innerHTML += 'None<br/>';
