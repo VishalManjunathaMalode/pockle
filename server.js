@@ -10,11 +10,12 @@ const blockchainFile = 'blockchain.json';
 const dataFolder = './data/';
 const retrievalLogsFile = 'retrieval_logs.json';
 
-// User management
-const usersFile = 'users.json'; // store users
+const usersFile = 'users.json';
+
 let currentUser = null; // keep track of logged-in user
 
-const SECRET_KEY = 'your-secure-password'; // Replace with a strong password
+// Use environment variable for SECRET_KEY
+const SECRET_KEY = process.env.SECRET_KEY || 'your-secure-password'; 
 const IV_LENGTH = 16; // AES block size
 
 // Helper functions
@@ -22,7 +23,7 @@ function getKey() {
     return crypto.createHash('sha256').update(SECRET_KEY).digest();
 }
 
-// Encrypt/decrypt
+// Encrypt/decrypt functions
 function encrypt(text) {
     const key = getKey();
     const iv = crypto.randomBytes(IV_LENGTH);
@@ -43,7 +44,7 @@ function decrypt(encryptedText) {
     return decrypted;
 }
 
-// User registration/login/logout
+// User management
 function loadUsers() {
     if (fs.existsSync(usersFile)) {
         return JSON.parse(fs.readFileSync(usersFile, 'utf8'));
@@ -55,19 +56,20 @@ function saveUsers(users) {
     fs.writeFileSync(usersFile, JSON.stringify(users, null, 2));
 }
 
+// Register endpoint
 app.post('/register', (req, res) => {
     const { username, password } = req.body;
     const users = loadUsers();
     if (users[username]) {
         return res.status(400).send('User already exists');
     }
-    // Store hashed password for security
     const hash = crypto.createHash('sha256').update(password).digest('hex');
     users[username] = { password: hash };
     saveUsers(users);
     res.send('Registration successful');
 });
 
+// Login endpoint
 app.post('/login', (req, res) => {
     const { username, password } = req.body;
     const users = loadUsers();
@@ -82,6 +84,7 @@ app.post('/login', (req, res) => {
     res.send(`Logged in as ${username}`);
 });
 
+// Logout endpoint
 app.post('/logout', (req, res) => {
     currentUser = null;
     res.send('Logged out');
@@ -247,6 +250,7 @@ app.get('/', (req, res) => {
 });
 
 // Start server
-app.listen(3000, () => {
-    console.log('Server running on http://localhost:3000');
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
 });
