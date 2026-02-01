@@ -1,6 +1,7 @@
 // User data storage
 let users = {};
 let blockchain = [];
+let currentUser = '';
 
 // Load users and blockchain from local storage on page load
 window.addEventListener('load', () => {
@@ -72,6 +73,7 @@ document.getElementById('loginBtn').addEventListener('click', () => {
 
 // Start image functions after login
 function startImageFunctions(username) {
+  currentUser = username; // set globally
   document.getElementById('mainContent').innerHTML = '';
   createImageSection(username);
 }
@@ -104,7 +106,9 @@ async function createGenesisBlock() {
     timestamp: new Date().toISOString(),
     imageData: '',
     previousHash: '0',
-    hash: ''
+    hash: '',
+    storedBy: 'System', // Genesis
+    retrievedBy: []
   };
   genesisBlock.hash = await calculateHash(JSON.stringify(genesisBlock));
   blockchain.push(genesisBlock);
@@ -128,7 +132,9 @@ async function generateBlock(imageData, username) {
     timestamp: new Date().toISOString(),
     imageData: imageData,
     previousHash: previousBlock.hash,
-    hash: ''
+    hash: '',
+    storedBy: username,
+    retrievedBy: []
   };
   newBlock.hash = await calculateHash(JSON.stringify(newBlock));
   blockchain.push(newBlock);
@@ -160,6 +166,11 @@ function retrieveImage() {
   const imageDiv = document.getElementById('retrievedImage');
   const block = blockchain.find(b => b.index.toString() === code);
   if (block && block.imageData) {
+    // Log who retrieved
+    if (!block.retrievedBy.includes(currentUser)) {
+      block.retrievedBy.push(currentUser);
+      saveBlockchain();
+    }
     imageDiv.innerHTML = `<img src="${block.imageData}" width="300" />`;
     addToHistory(block);
   } else {
@@ -167,10 +178,12 @@ function retrieveImage() {
   }
 }
 
-// Add to history
+// Add to history with details
 function addToHistory(block) {
   const list = document.getElementById('historyList');
   const li = document.createElement('li');
-  li.textContent = `Code: ${block.index} | Time: ${block.timestamp}`;
+  li.innerHTML = `
+    Code: ${block.index} | Time: ${block.timestamp} | Stored by: ${block.storedBy} | Retrieved by: ${block.retrievedBy.join(', ') || 'None'}
+  `;
   list.appendChild(li);
 }
