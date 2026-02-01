@@ -116,7 +116,7 @@ async function generateBlock(imageData, username) {
   newBlock.hash = await calculateHash(JSON.stringify(newBlock));
   blockchain.push(newBlock);
   saveBlockchain();
-  // Log action
+  // Log upload action
   logAction('Upload', newBlock.index, username);
   return newBlock;
 }
@@ -133,15 +133,15 @@ function createImageSection(username) {
     <input type="text" id="retrieveCode" placeholder="Enter code to retrieve" />
     <button id="retrieveBtn">Retrieve Image</button>
     <div id="retrievedImage" style="margin-top:10px;"></div>
-    <h4>History Log</h4>
-    <div id="historyContainer"></div>
+    <h4>Action Log for Selected Image</h4>
+    <div id="imageHistory"></div>
   `;
   document.getElementById('mainContent').appendChild(container);
   document.getElementById('uploadBtn').addEventListener('click', () => uploadImage(username));
-  document.getElementById('retrieveBtn').addEventListener('click', retrieveImage);
+  document.getElementById('retrieveBtn').addEventListener('click', () => retrieveImage());
 }
 
-// Create history display
+// Create full history display
 function createHistorySection() {
   const container = document.createElement('div');
   container.id = 'fullHistory';
@@ -150,12 +150,12 @@ function createHistorySection() {
   updateFullHistory();
 }
 
-// Log an action (upload/retrieve)
-function logAction(type, code, username) {
+// Log an action
+function logAction(type, code, user) {
   const action = {
     type: type,
     code: code,
-    user: username,
+    user: user,
     timestamp: new Date().toISOString()
   };
   actionHistory.push(action);
@@ -209,19 +209,36 @@ function retrieveImage() {
     logAction('Retrieve', block.index, currentUser);
     // Show image
     imageDiv.innerHTML = `<img src="${block.imageData}" width="300" />`;
-    // Add to history log
-    addToHistory(block);
+    // Show detailed history for this image
+    showImageHistory(block);
   } else {
     imageDiv.innerHTML = 'No image found.';
+    document.getElementById('imageHistory').innerHTML = '';
   }
 }
 
-// Add individual block info to history log
-function addToHistory(block) {
-  const listDiv = document.getElementById('historyContainer');
-  const div = document.createElement('div');
-  div.innerHTML = `
-    <b>Code:</b> ${block.index} | <b>Time:</b> ${block.timestamp} | <b>Stored by:</b> ${block.storedBy} | <b>Retrieved by:</b> ${block.retrievedBy.join(', ') || 'None'}
+// Show detailed history for a specific image
+function showImageHistory(block) {
+  const container = document.getElementById('imageHistory');
+  container.innerHTML = '';
+  // Upload info
+  const uploadDiv = document.createElement('div');
+  uploadDiv.innerHTML = `
+    <b>Uploaded by:</b> ${block.storedBy} <br/>
+    <b>Upload time:</b> ${block.timestamp}
   `;
-  listDiv.appendChild(div);
+  container.appendChild(uploadDiv);
+  // Retrieval info
+  if (block.retrievedBy.length > 0) {
+    const retrievedDiv = document.createElement('div');
+    retrievedDiv.innerHTML = '<b>Retrieved by:</b><br/>';
+    block.retrievedBy.forEach(user => {
+      retrievedDiv.innerHTML += `- ${user}<br/>`;
+    });
+    container.appendChild(retrievedDiv);
+  } else {
+    const noRetrieveDiv = document.createElement('div');
+    noRetrieveDiv.innerHTML = '<b>No retrievals yet.</b>';
+    container.appendChild(noRetrieveDiv);
+  }
 }
