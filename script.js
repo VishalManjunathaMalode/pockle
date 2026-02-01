@@ -1,10 +1,17 @@
 // User data storage
 let users = {};
-// Load stored credentials on page load
+let blockchain = [];
+
+// Load users and blockchain from local storage on page load
 window.addEventListener('load', () => {
   const storedUsers = localStorage.getItem('users');
   if (storedUsers) {
     users = JSON.parse(storedUsers);
+  }
+
+  const storedBlockchain = localStorage.getItem('blockchain');
+  if (storedBlockchain) {
+    blockchain = JSON.parse(storedBlockchain);
   }
 });
 
@@ -13,7 +20,12 @@ function saveUsers() {
   localStorage.setItem('users', JSON.stringify(users));
 }
 
-// Show register/login toggles
+// Save blockchain to local storage
+function saveBlockchain() {
+  localStorage.setItem('blockchain', JSON.stringify(blockchain));
+}
+
+// Toggle between register and login views
 document.getElementById('showRegister').addEventListener('click', (e) => {
   e.preventDefault();
   document.getElementById('loginBox').style.display = 'none';
@@ -25,7 +37,7 @@ document.getElementById('showLogin').addEventListener('click', (e) => {
   document.getElementById('loginBox').style.display = 'block';
 });
 
-// Login
+// Handle login
 document.getElementById('loginBtn').addEventListener('click', () => {
   const username = document.getElementById('loginUsername').value.trim();
   const password = document.getElementById('loginPassword').value.trim();
@@ -41,7 +53,7 @@ document.getElementById('loginBtn').addEventListener('click', () => {
   }
 });
 
-// Register
+// Handle registration
 document.getElementById('registerBtn').addEventListener('click', () => {
   const username = document.getElementById('registerUsername').value.trim();
   const password = document.getElementById('registerPassword').value.trim();
@@ -58,7 +70,7 @@ document.getElementById('registerBtn').addEventListener('click', () => {
     messageDiv.textContent = 'Username already exists.';
   } else {
     users[username] = password;
-    saveUsers(); // Save to local storage
+    saveUsers();
     messageDiv.style.color = 'green';
     messageDiv.textContent = 'Registration successful! You can now login.';
     setTimeout(() => {
@@ -73,7 +85,7 @@ function startImageFunctions(username) {
   createImageSection(username);
 }
 
-// Create image upload/retrieve UI
+// Create upload and retrieve UI
 function createImageSection(username) {
   const container = document.createElement('div');
   container.id = 'imageSection';
@@ -98,10 +110,12 @@ function createImageSection(username) {
   });
 }
 
-// Blockchain-like ledger
-let blockchain = [];
+// Generate unique code
+function generateUniqueCode() {
+  return 'IMG' + Date.now() + Math.floor(Math.random() * 1000);
+}
 
-// Function to upload image with a unique code
+// Upload image and add to blockchain
 function uploadImage(username) {
   const fileInput = document.getElementById('imageUpload');
   const file = fileInput.files[0];
@@ -112,10 +126,9 @@ function uploadImage(username) {
 
   const reader = new FileReader();
   reader.onload = () => {
-    const imageData = reader.result; // base64 string
+    const imageData = reader.result;
     const code = generateUniqueCode();
 
-    // Create a block (transaction)
     const block = {
       code: code,
       username: username,
@@ -123,37 +136,28 @@ function uploadImage(username) {
       timestamp: new Date().toISOString()
     };
     blockchain.push(block);
-
+    saveBlockchain();
     alert(`Image uploaded with code: ${code}`);
-    fileInput.value = ''; // reset input
+    fileInput.value = '';
   };
   reader.readAsDataURL(file);
 }
 
-// Generate a simple unique code
-function generateUniqueCode() {
-  return 'IMG' + Date.now() + Math.floor(Math.random() * 1000);
-}
-
-// Function to retrieve image by code
+// Retrieve image by code
 function retrieveImage() {
   const code = document.getElementById('retrieveCode').value.trim();
   const imageContainer = document.getElementById('retrievedImage');
-  const historyList = document.getElementById('historyList');
 
-  // Find the block with this code
   const block = blockchain.find(b => b.code === code);
   if (block) {
-    // Show image
     imageContainer.innerHTML = `<img src="${block.imageData}" alt="Retrieved Image" width="300" />`;
-    // Log in history
     addToHistory(block);
   } else {
     imageContainer.innerHTML = 'No image found for this code.';
   }
 }
 
-// Add to retrieval history
+// Add retrieved info to history (for all users)
 function addToHistory(block) {
   const historyList = document.getElementById('historyList');
   const li = document.createElement('li');
