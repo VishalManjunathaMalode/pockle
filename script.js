@@ -187,32 +187,69 @@ function retrieveImage() {
   }
 }
 
-// Show detailed retrieval & upload history
+// Show detailed retrieval & upload history as a table
 function showImageHistory(block) {
   const container = document.getElementById('imageHistory');
   container.innerHTML = '';
 
-  // Show uploader info
-  const uploaderDiv = document.createElement('div');
-  uploaderDiv.innerHTML = `
-    <b>Uploaded by:</b> ${block.storedBy} <br/>
-    <b>Upload time:</b> ${new Date(block.timestamp).toLocaleString()}
-  `;
-  container.appendChild(uploaderDiv);
+  // Create table element
+  const table = document.createElement('table');
+  table.border = '1';
+  table.style.width = '100%';
+  table.style.borderCollapse = 'collapse';
 
-  // Show all retrievals with timestamps
-  if (block.retrievedBy.length > 0) {
-    const historyDiv = document.createElement('div');
-    historyDiv.innerHTML = '<b>Retrieval history:</b><br/>';
-    block.retrievedBy.forEach(entry => {
-      historyDiv.innerHTML += `- ${entry.user} at ${new Date(entry.timestamp).toLocaleString()}<br/>`;
-    });
-    container.appendChild(historyDiv);
-  } else {
-    const noRetrievals = document.createElement('div');
-    noRetrievals.innerHTML = 'No views yet.';
-    container.appendChild(noRetrievals);
-  }
+  // Create header row
+  const headerRow = document.createElement('tr');
+  const headers = ['Action', 'User', 'Time'];
+  headers.forEach(headerText => {
+    const th = document.createElement('th');
+    th.innerText = headerText;
+    th.style.padding = '8px';
+    headerRow.appendChild(th);
+  });
+  table.appendChild(headerRow);
+
+  // Add upload info
+  const uploadRow = document.createElement('tr');
+  const uploadActionTd = document.createElement('td');
+  uploadActionTd.innerText = 'Upload';
+  uploadActionTd.style.padding = '8px';
+
+  const uploaderTd = document.createElement('td');
+  uploaderTd.innerText = block.storedBy;
+  uploaderTd.style.padding = '8px';
+
+  const uploadTimeTd = document.createElement('td');
+  const uploadDate = new Date(block.timestamp);
+  uploadTimeTd.innerText = isNaN(uploadDate.getTime()) ? 'Invalid Date' : uploadDate.toLocaleString();
+  uploadTimeTd.style.padding = '8px';
+
+  uploadRow.appendChild(uploadActionTd);
+  uploadRow.appendChild(uploaderTd);
+  uploadRow.appendChild(uploadTimeTd);
+  table.appendChild(uploadRow);
+
+  // Add retrievals
+  block.retrievedBy.forEach(entry => {
+    const row = document.createElement('tr');
+
+    const actionTd = document.createElement('td');
+    actionTd.innerText = 'Retrieve';
+
+    const userTd = document.createElement('td');
+    userTd.innerText = entry.user;
+
+    const dateTd = document.createElement('td');
+    const date = new Date(entry.timestamp);
+    dateTd.innerText = isNaN(date.getTime()) ? 'Invalid Date' : date.toLocaleString();
+
+    row.appendChild(actionTd);
+    row.appendChild(userTd);
+    row.appendChild(dateTd);
+    table.appendChild(row);
+  });
+
+  container.appendChild(table);
 
   // Show current viewer
   const currentViewerDiv = document.createElement('div');
