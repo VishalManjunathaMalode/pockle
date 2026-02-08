@@ -72,7 +72,6 @@ function startImageFunctions(username) {
   currentUser = username;
   document.getElementById('mainContent').innerHTML = '';
   createImageSection(username);
-  // No full history section
 }
 
 // Genesis block
@@ -115,8 +114,7 @@ async function generateBlock(imageData, username) {
   newBlock.hash = await calculateHash(JSON.stringify(newBlock));
   blockchain.push(newBlock);
   saveBlockchain();
-  // Log upload action
-  logAction('Upload', newBlock.index, username);
+  // No action log here
   return newBlock;
 }
 
@@ -142,8 +140,7 @@ function createImageSection(username) {
 
 // Log an action
 function logAction(type, code, user) {
-  // Action logging for full history is removed
-  // If needed, can be re-implemented
+  // Action logging for full history is optional and not implemented here
 }
 
 // Upload image
@@ -170,7 +167,7 @@ function retrieveImage() {
   const imageDiv = document.getElementById('retrievedImage');
   const block = blockchain.find(b => b.index.toString() === code);
   if (block && block.imageData) {
-    // Log retrieval with timestamp
+    // Log retrieval
     if (!block.retrievedBy.some(entry => entry.user === currentUser)) {
       block.retrievedBy.push({ user: currentUser, timestamp: new Date().toISOString() });
       saveBlockchain();
@@ -187,18 +184,24 @@ function retrieveImage() {
   }
 }
 
-// Show detailed retrieval & upload history as a table
+// Show detailed retrieval & upload history as a table with upload info outside
 function showImageHistory(block) {
   const container = document.getElementById('imageHistory');
   container.innerHTML = '';
 
-  // Create table element
+  // Show upload info outside the table
+  const uploadInfoDiv = document.createElement('div');
+  uploadInfoDiv.innerHTML = `<b>Uploaded by:</b> ${block.storedBy} <br/>
+                             <b>Upload time:</b> ${isNaN(new Date(block.timestamp).getTime()) ? 'Invalid Date' : new Date(block.timestamp).toLocaleString()}`;
+  container.appendChild(uploadInfoDiv);
+
+  // Create table for retrievals
   const table = document.createElement('table');
   table.border = '1';
   table.style.width = '100%';
   table.style.borderCollapse = 'collapse';
 
-  // Create header row
+  // Table header
   const headerRow = document.createElement('tr');
   const headers = ['Action', 'User', 'Time'];
   headers.forEach(headerText => {
@@ -209,27 +212,7 @@ function showImageHistory(block) {
   });
   table.appendChild(headerRow);
 
-  // Add upload info
-  const uploadRow = document.createElement('tr');
-  const uploadActionTd = document.createElement('td');
-  uploadActionTd.innerText = 'Upload';
-  uploadActionTd.style.padding = '8px';
-
-  const uploaderTd = document.createElement('td');
-  uploaderTd.innerText = block.storedBy;
-  uploaderTd.style.padding = '8px';
-
-  const uploadTimeTd = document.createElement('td');
-  const uploadDate = new Date(block.timestamp);
-  uploadTimeTd.innerText = isNaN(uploadDate.getTime()) ? 'Invalid Date' : uploadDate.toLocaleString();
-  uploadTimeTd.style.padding = '8px';
-
-  uploadRow.appendChild(uploadActionTd);
-  uploadRow.appendChild(uploaderTd);
-  uploadRow.appendChild(uploadTimeTd);
-  table.appendChild(uploadRow);
-
-  // Add retrievals
+  // Retrieval entries
   block.retrievedBy.forEach(entry => {
     const row = document.createElement('tr');
 
