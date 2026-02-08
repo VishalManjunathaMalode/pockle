@@ -211,8 +211,11 @@ function showImageHistory(block) {
   });
   table.appendChild(headerRow);
 
-  // Retrieval entries
-  block.retrievedBy.forEach(entry => {
+  // Filter out entries with undefined user
+  const filteredEntries = block.retrievedBy.filter(entry => entry.user !== undefined);
+
+  // Create table rows for filtered entries
+  filteredEntries.forEach(entry => {
     const row = document.createElement('tr');
 
     const actionTd = document.createElement('td');
