@@ -100,10 +100,10 @@ async function calculateHash(data) {
 }
 
 // Add new block
-async function generateBlock(imageData, username) {
+async function generateBlock(imageData, username, code) {
   const previousBlock = blockchain[blockchain.length - 1];
   const newBlock = {
-    index: previousBlock.index + 1,
+    index: code,
     timestamp: new Date().toISOString(),
     imageData: imageData,
     previousHash: previousBlock.hash,
@@ -124,6 +124,12 @@ function createImageSection(username) {
   container.innerHTML = `
     <h3>Upload & Retrieve Images</h3>
     <input type="file" id="imageUpload" accept="image/*" />
+    <br/>
+    <label>
+      <input type="checkbox" id="customCodeCheckbox" /> Use custom code
+    </label>
+    <input type="text" id="customCodeInput" placeholder="Enter your code" disabled />
+    <br/><br/>
     <button id="uploadBtn">Upload Image</button>
     <br/><br/>
     <input type="text" id="retrieveCode" placeholder="Enter code to retrieve" />
@@ -133,6 +139,12 @@ function createImageSection(username) {
     <div id="imageHistory"></div>
   `;
   document.getElementById('mainContent').appendChild(container);
+
+  // Event listener for checkbox
+  document.getElementById('customCodeCheckbox').addEventListener('change', (e) => {
+    document.getElementById('customCodeInput').disabled = !e.target.checked;
+  });
+
   document.getElementById('uploadBtn').addEventListener('click', () => uploadImage(username));
   document.getElementById('retrieveBtn').addEventListener('click', () => retrieveImage());
 }
@@ -150,12 +162,34 @@ async function uploadImage(username) {
     alert('Select an image.');
     return;
   }
+
+  const useCustomCode = document.getElementById('customCodeCheckbox').checked;
+  const customCode = document.getElementById('customCodeInput').value.trim();
+
+  let codeToUse;
+
+  if (useCustomCode && customCode !== '') {
+    // Check if code already exists
+    if (blockchain.some(b => b.index.toString() === customCode)) {
+      alert('This code already exists. Choose another one.');
+      return;
+    }
+    codeToUse = customCode;
+  } else {
+    // Generate unique code (next available index)
+    codeToUse = (blockchain.length).toString();
+  }
+
   const reader = new FileReader();
   reader.onload = async () => {
     const imageData = reader.result;
-    const newBlock = await generateBlock(imageData, username);
+    const newBlock = await generateBlock(imageData, username, codeToUse);
     alert(`Stored with code: ${newBlock.index}`);
     document.getElementById('imageUpload').value = '';
+    // Reset custom code input
+    document.getElementById('customCodeInput').value = '';
+    document.getElementById('customCodeCheckbox').checked = false;
+    document.getElementById('customCodeInput').disabled = true;
   };
   reader.readAsDataURL(file);
 }
@@ -167,7 +201,7 @@ function retrieveImage() {
   const block = blockchain.find(b => b.index.toString() === code);
   if (block && block.imageData) {
     // Log retrieval
-    if (!block.retrievedBy.some(entry => entry.user === currentUser)) {
+    if (!block.retrievedBy.some(entry => entry.user === undefined)) {
       block.retrievedBy.push({ user: currentUser, timestamp: new Date().toISOString() });
       saveBlockchain();
     }
