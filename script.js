@@ -114,7 +114,6 @@ async function generateBlock(imageData, username) {
   newBlock.hash = await calculateHash(JSON.stringify(newBlock));
   blockchain.push(newBlock);
   saveBlockchain();
-  // No action log here
   return newBlock;
 }
 
@@ -140,7 +139,7 @@ function createImageSection(username) {
 
 // Log an action
 function logAction(type, code, user) {
-  // Action logging for full history is optional and not implemented here
+  // Optional: implement detailed logging if needed
 }
 
 // Upload image
