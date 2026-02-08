@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Image & User Storage with JSON Server</title>
+</head>
+<body>
+<h2>User Registration</h2>
+<input id="registerUsername" placeholder="Username"/>
+<input id="registerPassword" placeholder="Password"/>
+<button onclick="registerUser()">Register</button>
+<div id="registerMessage"></div>
+
+<h2>Login</h2>
+<input id="loginUsername" placeholder="Username"/>
+<input id="loginPassword" placeholder="Password"/>
+<button onclick="loginUser()">Login</button>
+<div id="loginMessage"></div>
+
+<div id="mainContent"></div>
+
+<script>
+const SERVER_URL = 'http://localhost:3000';
+
+let currentUser = '';
+
+async function registerUser() {
+  const username = document.getElementById('registerUsername').value.trim();
+  const password = document.getElementById('registerPassword').value.trim();
+  const msgDiv = document.getElementById('registerMessage');
+
+  if (!username || !password) {
+    msgDiv.innerText = 'Fill all fields.';
+    return;
+  }
+
+  const response = await fetch(`${SERVER_URL}/register`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username, password })
+  });
+
+  if (response.ok) {
+    msgDiv.innerText = 'Registration successful!';
+  } else {
+    const data = await response.json();
+    msgDiv.innerText = data.message || 'Error registering.';
+  }
+}
+
+async function loginUser() {
+  const username = document.getElementById('loginUsername').value.trim();
+  const password = document.getElementById('loginPassword').value.trim();
+  const msgDiv = document.getElementById('loginMessage');
+
+  const response = await fetch(`${SERVER_URL}/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username, password })
+  });
+
+  if (response.ok) {
+    currentUser = username;
+    msgDiv.innerText = 'Login successful!';
+    showImageSection();
+  } else {
+    const data = await response.json();
+    msgDiv.innerText = data.message || 'Login failed.';
+  }
+}
+
+function showImageSection() {
+  document.getElementById('mainContent').innerHTML = `
+    <h3>Upload Image</h3>
+    <input type="file" id="imageFile"/>
+    <button onclick="uploadImage()">Upload</button>
+    <h3>Retrieve Image</h3>
+    <input id="retrieveCode" placeholder="Enter code"/>
+    <button onclick="retrieveImage()">Retrieve</button>
+    <div id="retrievedImage"></div>
+    <h4>Image Info & History</h4>
+    <div id="imageInfo"></div>
+  `;
+}
+
+// Upload image
+function uploadImage() {
+  const fileInput = document.getElementById('imageFile');
+  const file = fileInput.files[0];
+  if (!file) {
+    alert('Select an image.');
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = async () => {
+    const imageData = reader.result;
+    const response = await fetch(`${SERVER_URL}/upload`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: currentUser, imageData })
+    });
+    const result = await response.json();
+    alert(`Stored with code: ${result.code}`);
+    fileInput.value = '';
+  };
+  reader.readAsDataURL(file);
+}
+
+// Retrieve image
+async function retrieveImage() {
+  const code = document.getElementById('retrieveCode').value.trim();
+  if (!code) return;
+  const response = await fetch(`${SERVER_URL}/retrieve`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ code: parseInt(code), username: currentUser })
+  });
+  if (response.ok) {
+    const data = await response.json();
+    document.getElementById('retrievedImage').innerHTML = `<img src="${data.imageData}" width="300"/>`;
+    showImageInfo(code);
+  } else {
+    document.getElementById('retrievedImage').innerText = 'Image not found.';
+    document.getElementById('imageInfo').innerHTML = '';
+  }
+}
+
+// Show info & history
+async function showImageInfo(code) {
+  // fetch data from server's JSON file is not possible directly from client
+  // so for simplicity, we can omit detailed history here
+  // unless you implement an API to get image details
+  document.getElementById('imageInfo').innerHTML = `
+    <p><b>Code:</b> ${code}</p>
+    <p>Retrieved by: ${currentUser} at ${new Date().toLocaleString()}</p>
+  `;
+}
+</script>
+</body>
+</html>
