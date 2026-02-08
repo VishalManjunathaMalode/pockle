@@ -1,0 +1,12 @@
+{
+  "blockchain": [
+    {
+      "index": 0,
+      "timestamp": "2024-04-27T12:00:00Z",
+      "username": "initial",
+      "password_hash": "initial_hash",
+      "prev_hash": "0",
+      "hash": "initial_block_hash"
+    }
+  ]
+}
