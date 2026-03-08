@@ -126,7 +126,7 @@ function createImageSection(username) {
     <input type="file" id="imageUpload" accept="image/*" />
     <br/>
     <label>
-      <input type="checkbox" id="customCodeCheckbox" /> Use custom code
+      <input type="checkbox" id="customCodeCheckbox" disabled /> Use custom code
     </label>
     <input type="text" id="customCodeInput" placeholder="Enter your code" disabled />
     <br/><br/>
@@ -140,9 +140,29 @@ function createImageSection(username) {
   `;
   document.getElementById('mainContent').appendChild(container);
 
+  const imageUploadInput = document.getElementById('imageUpload');
+  const customCodeCheckbox = document.getElementById('customCodeCheckbox');
+  const customCodeInput = document.getElementById('customCodeInput');
+
+  // Initially disable checkbox and input
+  customCodeCheckbox.disabled = true;
+  customCodeInput.disabled = true;
+
+  // Event listener for image selection
+  imageUploadInput.addEventListener('change', () => {
+    if (imageUploadInput.files.length > 0) {
+      customCodeCheckbox.disabled = false;
+    } else {
+      customCodeCheckbox.checked = false;
+      customCodeCheckbox.disabled = true;
+      customCodeInput.disabled = true;
+      customCodeInput.value = '';
+    }
+  });
+
   // Event listener for checkbox
-  document.getElementById('customCodeCheckbox').addEventListener('change', (e) => {
-    document.getElementById('customCodeInput').disabled = !e.target.checked;
+  customCodeCheckbox.addEventListener('change', (e) => {
+    customCodeInput.disabled = !e.target.checked;
   });
 
   document.getElementById('uploadBtn').addEventListener('click', () => uploadImage(username));

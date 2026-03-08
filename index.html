@@ -4,9 +4,31 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Image Blockchain App</title>
+<style>
+  .info-box {
+    border: 2px solid #007BFF;
+    background-color: #E7F3FF;
+    padding: 15px;
+    border-radius: 8px;
+    max-width: 1000px;
+    margin: 20px auto;
+    font-family: Arial, sans-serif;
+  }
+  .info-box h2 {
+    margin-top: 0;
+    color: #007BFF;
+  }
+</style>
 <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
+<div class="info-box">
+<h6>The current proof of concept (PoC) is designed for static deployment; a similar implementation needs to be developed and deployed on a server (which must be provisioned)<br>
+The current session holds transient data only during its active period and requires server deployment for persistent storage.<br>
+Currently, all data is stored within local storage.
+</h5>
+</div>
+<h4>Please create a account -> Register</h4>
 
 <h2>Register</h2>
 <div id="registerBox">
@@ -14,10 +36,11 @@
   <input type="password" id="registerPassword" placeholder="Password" />
   <button id="registerBtn">Register</button>
   <div id="registerMessage"></div>
-  <a href="#" id="showLogin">Already have an account? Login</a>
+  <h4>If Account is Registered -> Click below to Login</h4>
+  <a href="#" id="showLogin">Login</a>
 </div>
 
-<h2>Login</h2>
+
 <div id="loginBox" style="display:none;">
   <input type="text" id="loginUsername" placeholder="Username" />
   <input type="password" id="loginPassword" placeholder="Password" />
@@ -29,5 +52,7 @@
 <div id="mainContent"></div>
 
 <script src="script.js"></script>
+
+<footer>  <small>Copyright © 2026 All Rights Reserved by NMM & VMM  </small></footer>
 </body>
 </html>
